@@ -1,12 +1,19 @@
 type GreeterQuery {
-	sayHello(request: HelloRequestInput!): HelloReply!
-}
-input HelloRequestInput {
-	name: String!
+        sayHello(request: HelloRequestInput!): HelloReply!
 }
 type HelloReply {
-	message: String!
+        message: String!
+}
+input HelloRequestInput {
+        name: String!
+        number: Int
+        languages: [Language]!
+        strings: [String]!
+}
+enum Language {
+        EN
+        RU
 }
 schema {
-	query: GreeterQuery
+        query: GreeterQuery
 }
