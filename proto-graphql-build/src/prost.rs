@@ -16,6 +16,7 @@ pub fn configure() -> Builder {
     Builder {
         build_client: true,
         build_server: true,
+        remove_scalar_wrappers: false,
         out_dir: None,
         extern_path: Vec::new(),
         field_attributes: Vec::new(),
@@ -120,6 +121,7 @@ impl prost_build::ServiceGenerator for ServiceGenerator {
 pub struct Builder {
     pub(crate) build_client: bool,
     pub(crate) build_server: bool,
+    pub(crate) remove_scalar_wrappers: bool,
     pub(crate) extern_path: Vec<(String, String)>,
     pub(crate) field_attributes: Vec<(String, String)>,
     pub(crate) type_attributes: Vec<(String, String)>,
@@ -149,6 +151,12 @@ impl Builder {
     /// Enable or disable gRPC server code generation.
     pub fn build_server(mut self, enable: bool) -> Self {
         self.build_server = enable;
+        self
+    }
+
+    /// Enable or disable removing scalar wrappers in GraphQL structs
+    pub fn remove_scalar_wrappers(mut self, enable: bool) -> Self {
+        self.remove_scalar_wrappers = enable;
         self
     }
 
@@ -249,6 +257,7 @@ impl Builder {
         };
 
         let format = self.format;
+        let remove_scalar_wrappers = self.remove_scalar_wrappers;
 
         config.out_dir(out_dir.clone());
         for (proto_path, rust_path) in self.extern_path.iter() {
@@ -279,6 +288,8 @@ impl Builder {
             })?;
 
             let mut visitor = FileVisitor::default();
+            visitor.remove_scalar_wrappers(remove_scalar_wrappers);
+
             visitor.visit_file_mut(&mut file);
             fs::write(
                 path,

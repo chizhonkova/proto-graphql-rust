@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use heck::{CamelCase, SnakeCase};
 use proc_macro2::{Ident, TokenStream};
@@ -14,9 +14,14 @@ use syn::{
 #[derive(Default)]
 pub(crate) struct FileVisitor {
     pub(crate) module: Vec<syn::PathSegment>,
+    pub(crate) remove_scalar_wrappers: bool,
 }
 
 impl FileVisitor {
+    pub fn remove_scalar_wrappers(&mut self, enable: bool) {
+        self.remove_scalar_wrappers = enable;
+    }
+
     fn visit_items(&mut self, items: &mut Vec<syn::Item>) {
         let mut self_items: Vec<syn::Item> = vec![];
 
@@ -25,7 +30,15 @@ impl FileVisitor {
                 syn::Item::Struct(item) => {
                     let mut item = item.clone();
                     if is_proto(&mut item.attrs) {
-                        generate_struct(&mut self_items, &self.module, item);
+                        if self.remove_scalar_wrappers && is_scalar_wrapper(&item.ident) {
+                            self_items.push(add_scalar_wrapper_conversions(&item.ident));
+                        }
+                        generate_struct(
+                            &mut self_items,
+                            &self.module,
+                            item,
+                            self.remove_scalar_wrappers,
+                        );
                     }
                 }
                 syn::Item::Enum(item) => {
@@ -36,9 +49,19 @@ impl FileVisitor {
                             .iter()
                             .all(|variant| variant.fields.is_empty());
                         if is_enum {
-                            generate_enum(&mut self_items, &self.module, item);
+                            generate_enum(
+                                &mut self_items,
+                                &self.module,
+                                item,
+                                self.remove_scalar_wrappers,
+                            );
                         } else {
-                            generate_union(&mut self_items, &self.module, item);
+                            generate_union(
+                                &mut self_items,
+                                &self.module,
+                                item,
+                                self.remove_scalar_wrappers,
+                            );
                         }
                     }
                 }
@@ -72,6 +95,7 @@ impl VisitMut for FileVisitor {
 #[derive(Default)]
 struct TypeVisitor {
     input: bool,
+    remove_scalar_wrappers: bool,
 }
 
 impl VisitMut for TypeVisitor {
@@ -95,13 +119,61 @@ impl VisitMut for TypeVisitor {
 
         if will_rename(path) {
             let ident = &mut path.segments.last_mut().unwrap().ident;
-            if self.input {
-                *ident = format_ident!("{}GraphQlInput", ident);
+
+            if self.remove_scalar_wrappers && is_scalar_wrapper(ident) {
+                *ident = get_scalar_ident(ident);
             } else {
-                *ident = format_ident!("{}GraphQl", ident);
+                if self.input {
+                    *ident = format_ident!("{}GraphQlInput", ident);
+                } else {
+                    *ident = format_ident!("{}GraphQl", ident);
+                }
             }
         }
     }
+}
+
+fn is_scalar_wrapper(ident: &syn::Ident) -> bool {
+    let scalar_wrappers = vec![
+        format_ident!("DoubleW"),
+        format_ident!("Int32W"),
+        format_ident!("Int64W"),
+        format_ident!("BoolW"),
+    ];
+
+    scalar_wrappers.contains(ident)
+}
+
+fn get_scalar_ident(ident: &syn::Ident) -> syn::Ident {
+    let map = HashMap::from([
+        (format_ident!("DoubleW"), format_ident!("f64")),
+        (format_ident!("Int32W"), format_ident!("i32")),
+        (format_ident!("Int64W"), format_ident!("i64")),
+        (format_ident!("BoolW"), format_ident!("bool")),
+    ]);
+
+    map.get(ident).unwrap().clone()
+}
+
+fn add_scalar_wrapper_conversions(ident: &syn::Ident) -> syn::Item {
+    let scalar = get_scalar_ident(ident);
+
+    syn::Item::Verbatim(quote! {
+        #[allow(clippy::useless_conversion)]
+        impl From<#scalar> for #ident {
+            fn from(other: #scalar) -> Self {
+                #ident {
+                    value: other,
+                }
+            }
+        }
+        #[allow(clippy::useless_conversion)]
+        impl From<#ident> for #scalar {
+            fn from(other: #ident) -> Self {
+                other.value
+            }
+        }
+    })
 }
 
 fn needs_wrap_in_json(path: &syn::Path) -> bool {
@@ -335,6 +407,7 @@ pub(crate) fn generate_struct(
     self_items: &mut Vec<syn::Item>,
     module: &[PathSegment],
     mut item: syn::ItemStruct,
+    remove_scalar_wrappers: bool,
 ) {
     assert!(matches!(item.fields, syn::Fields::Named(..)));
     let mut annotations = GraphqlAnnotations::default();
@@ -352,21 +425,13 @@ pub(crate) fn generate_struct(
     let item_annotations = annotations.visit(&mut item.attrs, false);
 
     let derive_struct: syn::Attribute = parse_quote! {
-        #[derive(::async_graphql::SimpleObject, ::proto_graphql::serde::Serialize,
-            ::proto_graphql::serde::Deserialize)]
+        #[derive(::async_graphql::SimpleObject)]
     };
     let derive_input_struct: syn::Attribute = parse_quote! {
-        #[derive(::async_graphql::InputObject, ::proto_graphql::serde::Serialize,
-            ::proto_graphql::serde::Deserialize)]
+        #[derive(::async_graphql::InputObject, Default)]
     };
     item.attrs.push(derive_struct);
     input_item.attrs.push(derive_input_struct);
-    item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
-    input_item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
 
     if item.fields.is_empty() {
         item.attrs
@@ -471,7 +536,11 @@ pub(crate) fn generate_struct(
             prost_attrs.push(Default::default());
         }
 
-        TypeVisitor::default().visit_type_mut(&mut field.ty);
+        TypeVisitor {
+            input: false,
+            remove_scalar_wrappers,
+        }
+        .visit_type_mut(&mut field.ty);
 
         let convert = convert_field(&mut graphql_bindings, i, field, enumeration);
         convert_proto.push(convert.0);
@@ -496,7 +565,11 @@ pub(crate) fn generate_struct(
         if let Some(syn::Lit::Str(s)) = prost_attrs[i].get("enumeration") {
             replace_i32(&mut field.ty, syn::parse_str(&s.value()).unwrap());
         }
-        TypeVisitor { input: true }.visit_type_mut(&mut field.ty);
+        TypeVisitor {
+            input: true,
+            remove_scalar_wrappers,
+        }
+        .visit_type_mut(&mut field.ty);
     }
 
     self_items.push(syn::Item::Verbatim(quote! {
@@ -540,6 +613,7 @@ pub(crate) fn generate_union(
     self_items: &mut Vec<syn::Item>,
     module: &[PathSegment],
     mut item: syn::ItemEnum,
+    remove_scalar_wrappers: bool,
 ) {
     // GraphQL unions is similar to Rust enums with fields.
     let derive_union: syn::Attribute = parse_quote! {
@@ -579,7 +653,11 @@ pub(crate) fn generate_union(
         find_remove(&mut variant.attrs, "prost");
         for field in variant.fields.iter_mut() {
             find_remove(&mut field.attrs, "prost");
-            TypeVisitor { input: false }.visit_type_mut(&mut field.ty);
+            TypeVisitor {
+                input: false,
+                remove_scalar_wrappers,
+            }
+            .visit_type_mut(&mut field.ty);
             match &field.ty {
                 syn::Type::Path(ty) => {
                     if !will_rename(&ty.path) {
@@ -666,7 +744,11 @@ pub(crate) fn generate_union(
             find_remove(&mut variant.attrs, "prost");
             for field in variant.fields.iter_mut() {
                 find_remove(&mut field.attrs, "prost");
-                TypeVisitor { input: true }.visit_type_mut(&mut field.ty);
+                TypeVisitor {
+                    input: true,
+                    remove_scalar_wrappers,
+                }
+                .visit_type_mut(&mut field.ty);
                 fields.push(field.ty.clone());
             }
             let field_name = format_ident!("{}", variant.ident.to_string().to_snake_case());
@@ -807,6 +889,7 @@ pub(crate) fn generate_enum(
     self_items: &mut Vec<syn::Item>,
     module: &[PathSegment],
     mut item: syn::ItemEnum,
+    remove_scalar_wrappers: bool,
 ) {
     // GraphQL enums is similar to Rust enums with no fields.
     let derive_enum: syn::Attribute = parse_quote! {
@@ -840,12 +923,18 @@ pub(crate) fn generate_enum(
         find_remove(&mut variant.attrs, "prost");
         for field in variant.fields.iter_mut() {
             find_remove(&mut field.attrs, "prost");
-            TypeVisitor { input: false }.visit_type_mut(&mut field.ty);
+            TypeVisitor {
+                input: false,
+                remove_scalar_wrappers,
+            }
+            .visit_type_mut(&mut field.ty);
         }
     }
 
     let mut from_proto = vec![];
     let mut from_graphql = vec![];
+    let mut saved_ident = format_ident!("ident");
+
     item.variants.iter().for_each(|variant| {
         let mut bindings = vec![];
         let mut convert_proto = vec![];
@@ -857,6 +946,8 @@ pub(crate) fn generate_enum(
         });
 
         let ident = &variant.ident;
+        saved_ident = ident.clone();
+
         match variant.fields {
             syn::Fields::Named(_) => {
                 from_proto.push(quote! {
@@ -912,6 +1003,11 @@ pub(crate) fn generate_enum(
                 match other {
                     #(#from_graphql)*
                 }
+            }
+        }
+        impl Default for #graphql_name {
+            fn default() -> Self {
+                #graphql_name::#saved_ident
             }
         }
     }));

@@ -4,7 +4,6 @@ use std::{convert::Infallible, env, net::SocketAddr};
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_warp::{graphql, BadRequest, Response};
-use structopt::StructOpt;
 use tonic::transport::Channel;
 use warp::{http::Response as HttpResponse, Filter, Rejection};
 
@@ -17,23 +16,8 @@ mod pb {
     include!("../generated/helloworld.rs");
 }
 
-#[derive(Debug, StructOpt)]
-struct Args {
-    /// Display SDL(Schema Definition Language) instead of starting the server.
-    #[structopt(long)]
-    sdl: bool,
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::from_args();
-
-    if args.sdl {
-        let schema = build_graphql_schema::<Channel>().finish();
-        print!("{}", schema.sdl());
-        return Ok(());
-    }
-
     let addr: SocketAddr = ([0, 0, 0, 0], 4000).into();
     println!(
         "{} listening on http://localhost:4000",
@@ -43,6 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let grpc_client = GreeterClient::connect("http://localhost:4001").await?;
 
     let schema = build_graphql_schema::<Channel>().data(grpc_client).finish();
+    print!("{}", schema.sdl());
 
     let graphql_post = graphql(schema).and_then(
         move |(schema, request): (GreeterSchema<_>, async_graphql::Request)| async move {

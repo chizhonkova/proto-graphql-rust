@@ -583,28 +583,14 @@ pub mod reviews_server {
         const NAME: &'static str = "federation.reviews.Reviews";
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "Review")]
 pub struct ReviewGraphQl {
     pub body: ::prost::alloc::string::String,
     pub author: ::core::option::Option<UserGraphQl>,
     pub product: ::core::option::Option<ProductGraphQl>,
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "ReviewInput")]
 pub struct ReviewGraphQlInput {
     pub body: ::prost::alloc::string::String,
@@ -673,26 +659,12 @@ impl From<ReviewGraphQlInput> for Review {
         }
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "ReviewResponse")]
 pub struct ReviewResponseGraphQl {
     pub reviews: ::prost::alloc::vec::Vec<ReviewGraphQl>,
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "ReviewResponseInput")]
 pub struct ReviewResponseGraphQlInput {
     pub reviews: ::prost::alloc::vec::Vec<ReviewGraphQlInput>,
@@ -733,28 +705,14 @@ impl From<ReviewResponseGraphQlInput> for ReviewResponse {
         }
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "User", extends, complex)]
 pub struct UserGraphQl {
     #[graphql(external)]
     pub id: ::prost::alloc::string::String,
 }
 /// graphql: extends, complex
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "UserInput")]
 pub struct UserGraphQlInput {
     /// graphql: external
@@ -788,26 +746,12 @@ impl From<UserGraphQlInput> for User {
         Self { id: id.into() }
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "UserRequest")]
 pub struct UserRequestGraphQl {
     pub id: ::prost::alloc::string::String,
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "UserRequestInput")]
 pub struct UserRequestGraphQlInput {
     pub id: ::prost::alloc::string::String,
@@ -840,28 +784,14 @@ impl From<UserRequestGraphQlInput> for UserRequest {
         Self { id: id.into() }
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "Product", extends, complex)]
 pub struct ProductGraphQl {
     #[graphql(external)]
     pub upc: ::prost::alloc::string::String,
 }
 /// graphql: extends, complex
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "ProductInput")]
 pub struct ProductGraphQlInput {
     /// graphql: external
@@ -895,26 +825,12 @@ impl From<ProductGraphQlInput> for Product {
         Self { upc: upc.into() }
     }
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: SimpleObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "ProductRequest")]
 pub struct ProductRequestGraphQl {
     pub upc: ::prost::alloc::string::String,
 }
-#[derive(
-    Clone,
-    PartialEq,
-    :: async_graphql :: InputObject,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "ProductRequestInput")]
 pub struct ProductRequestGraphQlInput {
     pub upc: ::prost::alloc::string::String,
