@@ -6,5 +6,4 @@ members = [
     "examples/simple",
     "examples/subscription",
     "examples/federation",
-    "tools/codegen",
 ]
