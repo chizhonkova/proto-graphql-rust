@@ -8,18 +8,23 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     visit_mut::{self, VisitMut},
-    PathSegment,
+    GenericArgument, PathArguments, PathSegment,
 };
 
 #[derive(Default)]
 pub(crate) struct FileVisitor {
     pub(crate) module: Vec<syn::PathSegment>,
     pub(crate) remove_scalar_wrappers: bool,
+    pub(crate) allow_nullable_lists: bool,
 }
 
 impl FileVisitor {
     pub fn remove_scalar_wrappers(&mut self, enable: bool) {
         self.remove_scalar_wrappers = enable;
+    }
+
+    pub fn allow_nullable_lists(&mut self, enable: bool) {
+        self.allow_nullable_lists = enable;
     }
 
     fn visit_items(&mut self, items: &mut Vec<syn::Item>) {
@@ -38,6 +43,7 @@ impl FileVisitor {
                             &self.module,
                             item,
                             self.remove_scalar_wrappers,
+                            self.allow_nullable_lists,
                         );
                     }
                 }
@@ -96,6 +102,7 @@ impl VisitMut for FileVisitor {
 struct TypeVisitor {
     input: bool,
     remove_scalar_wrappers: bool,
+    allow_nullable_lists: bool,
 }
 
 impl VisitMut for TypeVisitor {
@@ -130,7 +137,27 @@ impl VisitMut for TypeVisitor {
                 }
             }
         }
+
+        if self.allow_nullable_lists && self.input && path_is_vec(path) {
+            let type_param = &mut path.segments.last_mut().unwrap().arguments;
+            let generic_param = match type_param {
+                PathArguments::AngleBracketed(param) => param.args.first_mut().unwrap(),
+                _ => unreachable!(),
+            };
+
+            let ty = match generic_param {
+                GenericArgument::Type(ty) => ty,
+                _ => unreachable!(),
+            };
+            *ty = syn::Type::Verbatim(quote! {::core::option::Option<#ty>});
+        }
     }
+}
+
+fn path_is_vec(path: &syn::Path) -> bool {
+    path.segments[0].ident == "prost"
+        && path.segments[1].ident == "alloc"
+        && path.segments.last().unwrap().ident == "Vec"
 }
 
 fn is_scalar_wrapper(ident: &syn::Ident) -> bool {
@@ -408,6 +435,7 @@ pub(crate) fn generate_struct(
     module: &[PathSegment],
     mut item: syn::ItemStruct,
     remove_scalar_wrappers: bool,
+    allow_nullable_lists: bool,
 ) {
     assert!(matches!(item.fields, syn::Fields::Named(..)));
     let mut annotations = GraphqlAnnotations::default();
@@ -515,8 +543,11 @@ pub(crate) fn generate_struct(
 
     let mut prost_attrs = vec![];
     let mut pre_convert_proto = vec![];
+    let mut convert_proto_input = vec![];
+    let mut pre_convert_proto_input = vec![];
     let mut convert_proto = vec![];
     let mut convert_graphql = vec![];
+    let mut convert_graphql_input = vec![];
     let mut proto_bindings = vec![];
     let mut graphql_bindings = vec![];
     for (i, field) in item.fields.iter_mut().enumerate() {
@@ -539,10 +570,29 @@ pub(crate) fn generate_struct(
         TypeVisitor {
             input: false,
             remove_scalar_wrappers,
+            allow_nullable_lists,
         }
         .visit_type_mut(&mut field.ty);
 
         let convert = convert_field(&mut graphql_bindings, i, field, enumeration);
+        if let syn::Type::Path(ty) = &field.ty {
+            let convert_input = convert.clone();
+
+            if allow_nullable_lists && path_is_vec(&ty.path) {
+                convert_proto_input.push(convert_input.3);
+                convert_graphql_input.push(convert_input.5);
+                if enumeration {
+                    pre_convert_proto_input.push(convert_input.4)
+                }
+            } else {
+                convert_proto_input.push(convert_input.0);
+                convert_graphql_input.push(convert_input.1);
+                if enumeration {
+                    pre_convert_proto_input.push(convert_input.2);
+                }
+            }
+        }
+
         convert_proto.push(convert.0);
         convert_graphql.push(convert.1);
         if enumeration {
@@ -568,6 +618,7 @@ pub(crate) fn generate_struct(
         TypeVisitor {
             input: true,
             remove_scalar_wrappers,
+            allow_nullable_lists,
         }
         .visit_type_mut(&mut field.ty);
     }
@@ -593,9 +644,9 @@ pub(crate) fn generate_struct(
         #[allow(clippy::useless_conversion)]
         impl From<#proto_name> for #graphql_input_name {
             fn from(other: #proto_name) -> Self {
-                #(#pre_convert_proto)*
+                #(#pre_convert_proto_input)*
                 let #proto_name { #(#proto_bindings)* .. } = other;
-                Self { #(#convert_proto)* }
+                Self { #(#convert_proto_input)* }
             }
         }
         #[allow(clippy::useless_conversion)]
@@ -603,7 +654,7 @@ pub(crate) fn generate_struct(
             fn from(other: #graphql_input_name) -> Self {
                 let #graphql_input_name { #(#graphql_bindings)* } =
                     other;
-                Self { #(#convert_graphql)* }
+                Self { #(#convert_graphql_input)* }
             }
         }
     }));
@@ -656,6 +707,7 @@ pub(crate) fn generate_union(
             TypeVisitor {
                 input: false,
                 remove_scalar_wrappers,
+                allow_nullable_lists: false,
             }
             .visit_type_mut(&mut field.ty);
             match &field.ty {
@@ -747,6 +799,7 @@ pub(crate) fn generate_union(
                 TypeVisitor {
                     input: true,
                     remove_scalar_wrappers,
+                    allow_nullable_lists: false,
                 }
                 .visit_type_mut(&mut field.ty);
                 fields.push(field.ty.clone());
@@ -926,6 +979,7 @@ pub(crate) fn generate_enum(
             TypeVisitor {
                 input: false,
                 remove_scalar_wrappers,
+                allow_nullable_lists: false,
             }
             .visit_type_mut(&mut field.ty);
         }
@@ -1028,7 +1082,14 @@ pub(crate) fn convert_field(
         ..
     }: &syn::Field,
     enumeration: bool,
-) -> (TokenStream, TokenStream, TokenStream) {
+) -> (
+    TokenStream,
+    TokenStream,
+    TokenStream,
+    TokenStream,
+    TokenStream,
+    TokenStream,
+) {
     let binding = ident
         .clone()
         .unwrap_or_else(|| format_ident!("_binding{}", index));
@@ -1047,13 +1108,23 @@ pub(crate) fn convert_field(
                     quote! {
                         let #binding = if other.#binding.is_some() { Some(other.#binding()) } else { None };
                     },
+                    quote!(),
+                    quote!(),
+                    quote!(),
                 );
             }
 
             let convert = quote! {
                 #ident #colon_token #binding.map(Into::into),
             };
-            return (convert.clone(), convert, quote!());
+            return (
+                convert.clone(),
+                convert,
+                quote!(),
+                quote!(),
+                quote!(),
+                quote!(),
+            );
         }
         if ty.path.segments[0].ident == "prost"
             && ty.path.segments[1].ident == "alloc"
@@ -1070,6 +1141,18 @@ pub(crate) fn convert_field(
                     quote! {
                         let #binding = other.#binding().map(Into::into).collect();
                     },
+                    quote! {
+                        #binding,
+                    },
+                    quote! {
+                        let #binding = other.#binding().map(Into::into).map(|b| Some(b)).collect();
+                    },
+                    quote! {
+                        #ident #colon_token #binding
+                            .into_iter()
+                            .map(|b| b.unwrap_or_default() as i32)
+                            .collect(),
+                    },
                 );
             }
 
@@ -1079,7 +1162,26 @@ pub(crate) fn convert_field(
                     .map(Into::into)
                     .collect(),
             };
-            return (convert.clone(), convert, quote!());
+            return (
+                convert.clone(),
+                convert,
+                quote!(),
+                quote! {
+                    #ident #colon_token #binding
+                        .into_iter()
+                        .map(Into::into)
+                        .map(|b| Some(b))
+                        .collect(),
+                },
+                quote!(),
+                quote! {
+                    #ident #colon_token #binding
+                        .into_iter()
+                        .map(|b| b.unwrap_or_default())
+                        .map(Into::into)
+                        .collect(),
+                },
+            );
         }
         if ty.path.segments[0].ident == "async_graphql"
             && ty.path.segments.last().unwrap().ident == "Json"
@@ -1100,6 +1202,9 @@ pub(crate) fn convert_field(
                         .collect(),
                 },
                 quote!(),
+                quote!(),
+                quote!(),
+                quote!(),
             );
         }
         if enumeration {
@@ -1113,6 +1218,9 @@ pub(crate) fn convert_field(
                 quote! {
                     let #binding = other.#binding();
                 },
+                quote!(),
+                quote!(),
+                quote!(),
             );
         }
     }
@@ -1120,7 +1228,14 @@ pub(crate) fn convert_field(
     let convert = quote! {
         #ident #colon_token #binding.into(),
     };
-    (convert.clone(), convert, quote!())
+    (
+        convert.clone(),
+        convert,
+        quote!(),
+        quote!(),
+        quote!(),
+        quote!(),
+    )
 }
 
 pub(crate) fn is_proto(attrs: &mut Vec<syn::Attribute>) -> bool {

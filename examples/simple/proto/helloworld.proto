@@ -10,9 +10,16 @@ message Int32W {
   int32 value = 1;
 }
 
+enum Language {
+  EN = 0;
+  RU = 1;
+}
+
 message HelloRequest {
   string name = 1;
   Int32W number = 2;
+  repeated Language languages = 3;
+  repeated string strings = 4;
 }
 
 message HelloReply {

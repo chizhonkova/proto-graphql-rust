@@ -9,11 +9,21 @@ pub struct HelloRequest {
     pub name: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub number: ::core::option::Option<Int32W>,
+    #[prost(enumeration = "Language", repeated, tag = "3")]
+    pub languages: ::prost::alloc::vec::Vec<i32>,
+    #[prost(string, repeated, tag = "4")]
+    pub strings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, :: prost :: Message)]
 pub struct HelloReply {
     #[prost(string, tag = "1")]
     pub message: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, :: prost :: Enumeration)]
+#[repr(i32)]
+pub enum Language {
+    En = 0,
+    Ru = 1,
 }
 /// Generated client implementations.
 pub mod greeter_client {
@@ -347,50 +357,95 @@ impl From<Int32WGraphQlInput> for Int32W {
 pub struct HelloRequestGraphQl {
     pub name: ::prost::alloc::string::String,
     pub number: ::core::option::Option<i32>,
+    pub languages: ::prost::alloc::vec::Vec<LanguageGraphQl>,
+    pub strings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
 #[graphql(name = "HelloRequestInput")]
 pub struct HelloRequestGraphQlInput {
     pub name: ::prost::alloc::string::String,
     pub number: ::core::option::Option<i32>,
+    pub languages: ::prost::alloc::vec::Vec<::core::option::Option<LanguageGraphQlInput>>,
+    pub strings: ::prost::alloc::vec::Vec<::core::option::Option<::prost::alloc::string::String>>,
 }
 #[allow(clippy::useless_conversion)]
 impl From<HelloRequest> for HelloRequestGraphQl {
     fn from(other: HelloRequest) -> Self {
-        let HelloRequest { name, number, .. } = other;
+        let languages = other.languages().map(Into::into).collect();
+        let HelloRequest {
+            name,
+            number,
+            strings,
+            ..
+        } = other;
         Self {
             name: name.into(),
             number: number.map(Into::into),
+            languages,
+            strings: strings.into_iter().map(Into::into).collect(),
         }
     }
 }
 #[allow(clippy::useless_conversion)]
 impl From<HelloRequestGraphQl> for HelloRequest {
     fn from(other: HelloRequestGraphQl) -> Self {
-        let HelloRequestGraphQl { name, number } = other;
+        let HelloRequestGraphQl {
+            name,
+            number,
+            languages,
+            strings,
+        } = other;
         Self {
             name: name.into(),
             number: number.map(Into::into),
+            languages: languages.into_iter().map(|b| b as i32).collect(),
+            strings: strings.into_iter().map(Into::into).collect(),
         }
     }
 }
 #[allow(clippy::useless_conversion)]
 impl From<HelloRequest> for HelloRequestGraphQlInput {
     fn from(other: HelloRequest) -> Self {
-        let HelloRequest { name, number, .. } = other;
+        let languages = other.languages().map(Into::into).map(|b| Some(b)).collect();
+        let HelloRequest {
+            name,
+            number,
+            strings,
+            ..
+        } = other;
         Self {
             name: name.into(),
             number: number.map(Into::into),
+            languages,
+            strings: strings
+                .into_iter()
+                .map(Into::into)
+                .map(|b| Some(b))
+                .collect(),
         }
     }
 }
 #[allow(clippy::useless_conversion)]
 impl From<HelloRequestGraphQlInput> for HelloRequest {
     fn from(other: HelloRequestGraphQlInput) -> Self {
-        let HelloRequestGraphQlInput { name, number } = other;
+        let HelloRequestGraphQlInput {
+            name,
+            number,
+            languages,
+            strings,
+        } = other;
         Self {
             name: name.into(),
             number: number.map(Into::into),
+            languages: languages
+                .into_iter()
+                .map(|b| b.unwrap_or_default() as i32)
+                .collect(),
+            strings: strings
+                .into_iter()
+                .map(|b| b.unwrap_or_default())
+                .map(Into::into)
+                .collect(),
         }
     }
 }
@@ -440,3 +495,40 @@ impl From<HelloReplyGraphQlInput> for HelloReply {
         }
     }
 }
+#[allow(clippy::useless_conversion)]
+impl From<Language> for LanguageGraphQl {
+    fn from(other: Language) -> Self {
+        match other {
+            Language::En => Self::En,
+            Language::Ru => Self::Ru,
+        }
+    }
+}
+#[allow(clippy::useless_conversion)]
+impl From<LanguageGraphQl> for Language {
+    fn from(other: LanguageGraphQl) -> Self {
+        match other {
+            LanguageGraphQl::En => Self::En,
+            LanguageGraphQl::Ru => Self::Ru,
+        }
+    }
+}
+impl Default for LanguageGraphQl {
+    fn default() -> Self {
+        LanguageGraphQl::Ru
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(i32)]
+#[derive(
+    :: async_graphql :: Enum,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
+#[graphql(name = "Language")]
+pub enum LanguageGraphQl {
+    En = 0,
+    Ru = 1,
+}
+pub use self::LanguageGraphQl as LanguageGraphQlInput;
