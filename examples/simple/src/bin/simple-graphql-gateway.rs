@@ -16,6 +16,10 @@ mod pb {
     include!("../generated/helloworld.rs");
 }
 
+mod num {
+    include!("../generated/num.rs");
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr: SocketAddr = ([0, 0, 0, 0], 4000).into();

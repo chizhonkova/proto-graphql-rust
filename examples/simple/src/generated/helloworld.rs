@@ -1,14 +1,9 @@
 #[derive(Clone, PartialEq, :: prost :: Message)]
-pub struct Int32W {
-    #[prost(int32, tag = "1")]
-    pub value: i32,
-}
-#[derive(Clone, PartialEq, :: prost :: Message)]
 pub struct HelloRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
-    pub number: ::core::option::Option<Int32W>,
+    pub number: ::core::option::Option<super::num::Int32W>,
     #[prost(enumeration = "Language", repeated, tag = "3")]
     pub languages: ::prost::alloc::vec::Vec<i32>,
     #[prost(string, repeated, tag = "4")]
@@ -294,69 +289,11 @@ pub mod greeter_server {
         const NAME: &'static str = "helloworld.Greeter";
     }
 }
-#[allow(clippy::useless_conversion)]
-impl From<i32> for Int32W {
-    fn from(other: i32) -> Self {
-        Int32W { value: other }
-    }
-}
-#[allow(clippy::useless_conversion)]
-impl From<Int32W> for i32 {
-    fn from(other: Int32W) -> Self {
-        other.value
-    }
-}
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
-#[graphql(name = "Int32W")]
-pub struct Int32WGraphQl {
-    pub value: i32,
-}
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
-#[graphql(name = "Int32WInput")]
-pub struct Int32WGraphQlInput {
-    pub value: i32,
-}
-#[allow(clippy::useless_conversion)]
-impl From<Int32W> for Int32WGraphQl {
-    fn from(other: Int32W) -> Self {
-        let Int32W { value, .. } = other;
-        Self {
-            value: value.into(),
-        }
-    }
-}
-#[allow(clippy::useless_conversion)]
-impl From<Int32WGraphQl> for Int32W {
-    fn from(other: Int32WGraphQl) -> Self {
-        let Int32WGraphQl { value } = other;
-        Self {
-            value: value.into(),
-        }
-    }
-}
-#[allow(clippy::useless_conversion)]
-impl From<Int32W> for Int32WGraphQlInput {
-    fn from(other: Int32W) -> Self {
-        let Int32W { value, .. } = other;
-        Self {
-            value: value.into(),
-        }
-    }
-}
-#[allow(clippy::useless_conversion)]
-impl From<Int32WGraphQlInput> for Int32W {
-    fn from(other: Int32WGraphQlInput) -> Self {
-        let Int32WGraphQlInput { value } = other;
-        Self {
-            value: value.into(),
-        }
-    }
-}
 #[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
 #[graphql(name = "HelloRequest")]
 pub struct HelloRequestGraphQl {
     pub name: ::prost::alloc::string::String,
-    pub number: ::core::option::Option<i32>,
+    pub number: ::core::option::Option<super::num::i32>,
     pub languages: ::prost::alloc::vec::Vec<LanguageGraphQl>,
     pub strings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
@@ -364,7 +301,7 @@ pub struct HelloRequestGraphQl {
 #[graphql(name = "HelloRequestInput")]
 pub struct HelloRequestGraphQlInput {
     pub name: ::prost::alloc::string::String,
-    pub number: ::core::option::Option<i32>,
+    pub number: ::core::option::Option<super::num::i32>,
     pub languages: ::prost::alloc::vec::Vec<::core::option::Option<LanguageGraphQlInput>>,
     pub strings: ::prost::alloc::vec::Vec<::core::option::Option<::prost::alloc::string::String>>,
 }

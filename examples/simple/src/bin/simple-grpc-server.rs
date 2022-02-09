@@ -13,6 +13,10 @@ mod pb {
     include!("../generated/helloworld.rs");
 }
 
+mod num {
+    include!("../generated/num.rs");
+}
+
 #[derive(Default)]
 struct MyGreeter {}
 

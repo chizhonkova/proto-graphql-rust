@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package helloworld;
 
+import "num.proto";
+
 service Greeter {
   rpc SayHello(HelloRequest) returns (HelloReply);
-}
-
-message Int32W {
-  int32 value = 1;
 }
 
 enum Language {
@@ -17,7 +15,7 @@ enum Language {
 
 message HelloRequest {
   string name = 1;
-  Int32W number = 2;
+  num.Int32W number = 2;
   repeated Language languages = 3;
   repeated string strings = 4;
 }

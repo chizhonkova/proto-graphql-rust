@@ -186,6 +186,8 @@ fn add_scalar_wrapper_conversions(ident: &syn::Ident) -> syn::Item {
     let scalar = get_scalar_ident(ident);
 
     syn::Item::Verbatim(quote! {
+        #[allow(non_camel_case_types)]
+        pub type #scalar = std::primitive::#scalar;
         #[allow(clippy::useless_conversion)]
         impl From<#scalar> for #ident {
             fn from(other: #scalar) -> Self {
