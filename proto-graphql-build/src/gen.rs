@@ -670,13 +670,11 @@ pub(crate) fn generate_union(
 ) {
     // GraphQL unions is similar to Rust enums with fields.
     let derive_union: syn::Attribute = parse_quote! {
-        #[derive(::async_graphql::Union, ::proto_graphql::serde::Serialize,
-            ::proto_graphql::serde::Deserialize)]
+        #[derive(::async_graphql::Union)]
     };
     // TODO: https://github.com/async-graphql/async-graphql/issues/373#issuecomment-753761917
     let derive_input_struct: syn::Attribute = parse_quote! {
-        #[derive(::async_graphql::InputObject, ::proto_graphql::serde::Serialize,
-            ::proto_graphql::serde::Deserialize)]
+        #[derive(::async_graphql::InputObject)]
     };
 
     let mut input_item = item.clone();
@@ -688,12 +686,6 @@ pub(crate) fn generate_union(
 
     item.attrs.push(derive_union);
     input_item.attrs.push(derive_input_struct);
-    item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
-    input_item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
     let name = format!("{}{}", path_to_name(module), proto_name);
     let input_name = format!("{}{}Input", path_to_name(module), proto_name);
     item.attrs.push(parse_quote!(#[graphql(name = #name)]));
@@ -726,9 +718,7 @@ pub(crate) fn generate_union(
                         self_items.push(syn::Item::Verbatim(quote! {
                             #[derive(
                                 Clone, PartialEq,
-                                ::async_graphql::SimpleObject,
-                                ::proto_graphql::serde::Serialize,
-                                ::proto_graphql::serde::Deserialize
+                                ::async_graphql::SimpleObject
                             )]
                             #attr
                             pub struct #newtype_ident {
@@ -761,9 +751,7 @@ pub(crate) fn generate_union(
                     self_items.push(syn::Item::Verbatim(quote! {
                         #[derive(
                             Clone, PartialEq,
-                            ::async_graphql::SimpleObject,
-                            ::proto_graphql::serde::Serialize,
-                            ::proto_graphql::serde::Deserialize
+                            ::async_graphql::SimpleObject
                         )]
                         #attr
                         pub struct #newtype_ident {
@@ -948,8 +936,7 @@ pub(crate) fn generate_enum(
 ) {
     // GraphQL enums is similar to Rust enums with no fields.
     let derive_enum: syn::Attribute = parse_quote! {
-        #[derive(::async_graphql::Enum, ::proto_graphql::serde::Serialize,
-            ::proto_graphql::serde::Deserialize)]
+        #[derive(::async_graphql::Enum)]
     };
 
     let mut input_item = item.clone();
@@ -961,12 +948,6 @@ pub(crate) fn generate_enum(
 
     item.attrs.push(derive_enum.clone());
     input_item.attrs.push(derive_enum);
-    item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
-    input_item.attrs.push(parse_quote! {
-        #[serde(crate = "::proto_graphql::serde")]
-    });
     let name = format!("{}{}", path_to_name(module), proto_name);
     let input_name = format!("{}{}Input", path_to_name(module), proto_name);
     item.attrs.push(parse_quote!(#[graphql(name = #name)]));

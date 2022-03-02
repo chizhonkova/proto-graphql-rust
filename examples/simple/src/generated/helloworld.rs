@@ -457,12 +457,7 @@ impl Default for LanguageGraphQl {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[repr(i32)]
-#[derive(
-    :: async_graphql :: Enum,
-    :: proto_graphql :: serde :: Serialize,
-    :: proto_graphql :: serde :: Deserialize,
-)]
-#[serde(crate = "::proto_graphql::serde")]
+#[derive(:: async_graphql :: Enum)]
 #[graphql(name = "Language")]
 pub enum LanguageGraphQl {
     En = 0,
