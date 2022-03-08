@@ -289,7 +289,14 @@ pub mod greeter_server {
         const NAME: &'static str = "helloworld.Greeter";
     }
 }
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: SimpleObject,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloRequest")]
 pub struct HelloRequestGraphQl {
     pub name: ::prost::alloc::string::String,
@@ -297,7 +304,15 @@ pub struct HelloRequestGraphQl {
     pub languages: ::prost::alloc::vec::Vec<LanguageGraphQl>,
     pub strings: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: InputObject,
+    Default,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloRequestInput")]
 pub struct HelloRequestGraphQlInput {
     pub name: ::prost::alloc::string::String,
@@ -386,12 +401,27 @@ impl From<HelloRequestGraphQlInput> for HelloRequest {
         }
     }
 }
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: SimpleObject,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloReply")]
 pub struct HelloReplyGraphQl {
     pub message: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: InputObject,
+    Default,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloReplyInput")]
 pub struct HelloReplyGraphQlInput {
     pub message: ::prost::alloc::string::String,
@@ -457,7 +487,12 @@ impl Default for LanguageGraphQl {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[repr(i32)]
-#[derive(:: async_graphql :: Enum)]
+#[derive(
+    :: async_graphql :: Enum,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "Language")]
 pub enum LanguageGraphQl {
     En = 0,

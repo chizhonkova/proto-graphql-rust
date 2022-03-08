@@ -17,12 +17,27 @@ impl From<Int32W> for i32 {
         other.value
     }
 }
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: SimpleObject,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "Int32W")]
 pub struct Int32WGraphQl {
     pub value: i32,
 }
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: InputObject,
+    Default,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "Int32WInput")]
 pub struct Int32WGraphQlInput {
     pub value: i32,

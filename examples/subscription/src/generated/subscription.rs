@@ -305,13 +305,28 @@ pub mod subscription_server {
         const NAME: &'static str = "subscription.Subscription";
     }
 }
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: SimpleObject,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloRequest")]
 pub struct HelloRequestGraphQl {
     pub names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     pub interval: ::core::option::Option<f32>,
 }
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: InputObject,
+    Default,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloRequestInput")]
 pub struct HelloRequestGraphQlInput {
     pub names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -361,12 +376,27 @@ impl From<HelloRequestGraphQlInput> for HelloRequest {
         }
     }
 }
-#[derive(Clone, PartialEq, :: async_graphql :: SimpleObject)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: SimpleObject,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloReply")]
 pub struct HelloReplyGraphQl {
     pub message: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, :: async_graphql :: InputObject, Default)]
+#[derive(
+    Clone,
+    PartialEq,
+    :: async_graphql :: InputObject,
+    Default,
+    :: proto_graphql :: serde :: Serialize,
+    :: proto_graphql :: serde :: Deserialize,
+)]
+#[serde(crate = "::proto_graphql::serde")]
 #[graphql(name = "HelloReplyInput")]
 pub struct HelloReplyGraphQlInput {
     pub message: ::prost::alloc::string::String,

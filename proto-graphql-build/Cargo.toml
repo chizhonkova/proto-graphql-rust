@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Taiki Endo <te316e89@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/wantedly/proto-graphql-rust"
+repository = "https://github.com/chizhonkova/proto-graphql-rust"
 publish = false
 
 [package.metadata.docs.rs]
